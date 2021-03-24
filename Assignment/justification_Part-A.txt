@@ -1,0 +1,37 @@
+Reason - 1:
+
+spinning disks are very good at sequential data transfer and very bad at random seeking. And since MongoDB stores documents contiguously on disk, putting all the data you need into one document means that you’re never more than one seek away from everything you need.
+
+
+Reason - 2:
+
+Join will result in random seeks from two different collections
+
+Reason - 3:
+
+Embedding for atomicity and isolation
+
+Another concern that weighs in favor of embedding is the desire for atomicity and isolation in writing data. When we update data in our database, we want to ensure that our update either succeeds or fails entirely, never having a “partial success,” and that any other database reader never sees an incomplete write operation. Relational databases achieve this by using multistatement transactions. For instance, if we want to DELETE Jenny from our normalized database, we might execute code similar to the following:
+
+BEGIN TRANSACTION;
+DELETE FROM contacts WHERE contact_id=3;
+DELETE FROM numbers WHERE contact_id=3;
+COMMIT;
+The problem with using this approach in MongoDB is that MongoDB is designed without multidocument transactions. If we tried to delete Jenny from our “normalized” MongoDB schema, we would need to execute the following code:
+
+db.contacts.remove({'_id': 3})
+db.numbers.remove({'contact_id': 3})
+
+Using this approach, we introduce the possibility that Jenny could be removed from the contacts collection but have her numbers remain in the numbers collection. There’s also the possibility that another process reads the database after Jenny’s been removed from the contacts collection, but before her numbers have been removed. On the other hand, if we use the embedded schema, we can remove Jenny from our database with a single operation:
+
+db.contacts.remove({'_id': 3})
+
+
+Reason - 4:
+
+Document size will not likely be exceeded because each climate will not have a lot of fire in one day. {Assumption}
+
+
+Reason - 5
+
+Non-relational databases like mongo DB do not natively push the join operation like relational databases do
